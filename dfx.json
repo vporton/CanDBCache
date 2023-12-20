@@ -1,0 +1,29 @@
+{
+  "canisters": {
+    "CanDBCache_backend": {
+      "main": "src/CanDBCache_backend/main.mo",
+      "type": "motoko"
+    },
+    "CanDBCache_frontend": {
+      "dependencies": [
+        "CanDBCache_backend"
+      ],
+      "frontend": {
+        "entrypoint": "src/CanDBCache_frontend/src/index.html"
+      },
+      "source": [
+        "src/CanDBCache_frontend/assets",
+        "dist/CanDBCache_frontend/"
+      ],
+      "type": "assets"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "output_env_file": ".env",
+  "version": 1
+}
