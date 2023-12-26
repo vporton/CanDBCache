@@ -1,0 +1,10 @@
+[package]
+name = "CanDBCache"
+version = "1.0.0"
+description = "Access to multiple canisters of CanDB database"
+repository = "https://github.com/vporton/CanDBCache"
+keywords = [ "database", "databases", "query" ]
+license = "MIT"
+
+[dependencies]
+candb = "1.0.2"
