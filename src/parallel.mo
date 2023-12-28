@@ -10,11 +10,6 @@ import RBT "mo:stable-rbtree/StableRBTree";
 import StableBuffer "mo:stablebuffer/StableBuffer";
 
 module {
-    type Result = {
-        value: E.Entity;
-        status: { #oneResult; #severalResults };
-    };
-
     public func getAll(db: CanDB.DB, map: CanisterMap.CanisterMap, pk: Text, options: CanDB.GetOptions) : async* RBT.Tree<Principal, E.Entity> {
         var result = RBT.init<Principal, E.Entity>();
         let canisters = CanisterMap.get(map, pk);
@@ -50,13 +45,15 @@ module {
         RBT.entries(all).next();
     };
 
-    public func getOne(db: CanDB.DB, map: CanisterMap.CanisterMap, pk: Text, options: CanDB.GetOptions) : async* ?(Principal, Result) {
+    type ResultStatus = { #oneResult; #severalResults };
+
+    public func getOne(db: CanDB.DB, map: CanisterMap.CanisterMap, pk: Text, options: CanDB.GetOptions) : async* ?(Principal, E.Entity, ResultStatus) {
         let all = await* getAll(db, map, pk, options);
         var iter = RBT.entries(all);
         let v = iter.next();
         switch (v) {
             case (?v) {
-                ?(v.0, { value = v.1; status = if (iter.next() == null) { #oneResult } else { #severalResults }});
+                ?(v.0, v.1, if (iter.next() == null) { #oneResult } else { #severalResults });
             };
             case null {
                 null;
