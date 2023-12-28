@@ -45,7 +45,7 @@ module {
         RBT.entries(all).next();
     };
 
-    type ResultStatus = { #oneResult; #severalResults };
+    public type ResultStatus = { #oneResult; #severalResults };
 
     public func getOne(db: CanDB.DB, map: CanisterMap.CanisterMap, pk: Text, options: CanDB.GetOptions) : async* ?(Principal, E.Entity, ResultStatus) {
         let all = await* getAll(db, map, pk, options);
