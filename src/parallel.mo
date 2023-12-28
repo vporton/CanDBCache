@@ -11,11 +11,8 @@ import StableBuffer "mo:stablebuffer/StableBuffer";
 
 module {
     type Result = {
-        #read : {
-            value: E.AttributeValue;
-            status: { #oneResult; #severalResults };
-        };
-        #zeroResults;
+        value: E.Entity;
+        status: { #oneResult; #severalResults };
     };
 
     public func getAll(db: CanDB.DB, map: CanisterMap.CanisterMap, pk: Text, options: CanDB.GetOptions) : async* RBT.Tree<Principal, E.Entity> {
@@ -45,5 +42,25 @@ module {
             }
         };
         result;
+    };
+
+    // Can be made faster at expense of code size.
+    public func getFirst(db: CanDB.DB, map: CanisterMap.CanisterMap, pk: Text, options: CanDB.GetOptions) : async* ?(Principal, E.Entity) {
+        let all = await* getAll(db, map, pk, options);
+        RBT.entries(all).next();
+    };
+
+    public func getOne(db: CanDB.DB, map: CanisterMap.CanisterMap, pk: Text, options: CanDB.GetOptions) : async* ?(Principal, Result) {
+        let all = await* getAll(db, map, pk, options);
+        var iter = RBT.entries(all);
+        let v = iter.next();
+        switch (v) {
+            case (?v) {
+                ?(v.0, { value = v.1; status = if (iter.next() == null) { #oneResult } else { #severalResults }});
+            };
+            case null {
+                null;
+            };
+        };
     };
 }
