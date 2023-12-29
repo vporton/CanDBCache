@@ -80,7 +80,7 @@ module {
     };
 
     public func putExisting(db: CanDB.DB, options: CanDB.PutOptions) : async* Bool {
-        await* replaceExisting(db, options) != null;
+        (await* replaceExisting(db, options)) != null;
     };
 
     /// This function is intended to ensure that a new value with the same SK is not introduced.
