@@ -4,6 +4,7 @@ import Iter "mo:base/Iter";
 import Array "mo:base/Array";
 import Buffer "mo:base/Buffer";
 import Debug "mo:base/Debug";
+import Int "mo:base/Int";
 import CanDB "mo:candb/CanDB";
 import CanisterMap "mo:candb/CanisterMap";
 import RBT "mo:stable-rbtree/StableRBTree";
@@ -19,7 +20,7 @@ module {
         let threads : [var ?(async ?E.Entity)] = Array.init(StableBuffer.size(canisters2), null);
         for (threadNum in threads.keys()) {
             let canister = StableBuffer.get(canisters2, threadNum);
-            let partition = actor (canister) : actor { get : (options: CanDB.GetOptions) -> async ?E.Entity };
+            let partition = actor(canister) : actor { get : (options: CanDB.GetOptions) -> async ?E.Entity };
             threads[threadNum] := ?(partition.get(options)); // `??value`
         };
         for (tkey in threads.keys()) {
@@ -58,6 +59,45 @@ module {
             case null {
                 null;
             };
+        };
+    };
+
+    // TODO: `has` counterparts of `get` methods
+
+    // TODO: below race conditions
+
+    /// This function is intended to ensure that a new value with the same SK is not introduced.
+    public func checkedReplace(db: CanDB.DB, map: CanisterMap.CanisterMap, pk: Text, options: CanDB.PutOptions) : async* Bool {
+        let first = await* getFirst(db, map, pk, options);
+        switch (first) {
+            case (?(partition, entity)) {
+                let canister = actor(Principal.toText(partition)) : actor { put: (options: CanDB.PutOptions) -> async () };
+                await canister.put(options);
+                true;
+            };
+            case null {
+                false;
+            };
+        };
+    };
+
+    /// This function is intended to ensure that a new value with the same SK is not introduced.
+    public func checkedReplaceOrTrap(db: CanDB.DB, map: CanisterMap.CanisterMap, pk: Text, options: CanDB.PutOptions) : async* () {
+        if (not(await* checkedReplace(db, map, pk, options))) {
+            Debug.trap("no value to replace");
+        }
+    };
+
+    /// Ensures no duplicate SKs.
+    public func putNoDuplicates(db: CanDB.DB, map: CanisterMap.CanisterMap, pk: Text, options: CanDB.PutOptions) : async* () {
+        if (not(await* checkedReplace(db, map, pk, options))) {
+            let canisters = CanisterMap.get(map, pk);
+            let ?canisters2 = canisters else {
+                Debug.trap("no partition canisters");
+            };
+            let canister = StableBuffer.get(canisters2, Int.abs(StableBuffer.size(canisters2) - 1));
+            let partition = actor(canister) : actor { put : (options: CanDB.PutOptions) -> async () };
+            await partition.put(options);
         };
     };
 }
