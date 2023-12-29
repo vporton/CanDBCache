@@ -11,7 +11,7 @@ import RBT "mo:stable-rbtree/StableRBTree";
 import StableBuffer "mo:stablebuffer/StableBuffer";
 
 module {
-    public func getAll(db: CanDB.DB, map: CanisterMap.CanisterMap, pk: Text, options: CanDB.GetOptions) : async* RBT.Tree<Principal, E.Entity> {
+    public func getAll(map: CanisterMap.CanisterMap, pk: Text, options: CanDB.GetOptions) : async* RBT.Tree<Principal, E.Entity> {
         var result = RBT.init<Principal, E.Entity>();
         let canisters = CanisterMap.get(map, pk);
         let ?canisters2 = canisters else {
@@ -41,15 +41,15 @@ module {
     };
 
     // Can be made faster at expense of code size.
-    public func getFirst(db: CanDB.DB, map: CanisterMap.CanisterMap, pk: Text, options: CanDB.GetOptions) : async* ?(Principal, E.Entity) {
-        let all = await* getAll(db, map, pk, options);
+    public func getFirst(map: CanisterMap.CanisterMap, pk: Text, options: CanDB.GetOptions) : async* ?(Principal, E.Entity) {
+        let all = await* getAll(map, pk, options);
         RBT.entries(all).next();
     };
 
     public type ResultStatus = { #oneResult; #severalResults };
 
-    public func getOne(db: CanDB.DB, map: CanisterMap.CanisterMap, pk: Text, options: CanDB.GetOptions) : async* ?(Principal, E.Entity, ResultStatus) {
-        let all = await* getAll(db, map, pk, options);
+    public func getOne(map: CanisterMap.CanisterMap, pk: Text, options: CanDB.GetOptions) : async* ?(Principal, E.Entity, ResultStatus) {
+        let all = await* getAll(map, pk, options);
         var iter = RBT.entries(all);
         let v = iter.next();
         switch (v) {
@@ -67,12 +67,11 @@ module {
     // TODO: below race conditions
 
     /// This function is intended to ensure that a new value with the same SK is not introduced.
-    public func checkedReplace(db: CanDB.DB, map: CanisterMap.CanisterMap, pk: Text, options: CanDB.PutOptions) : async* Bool {
-        let first = await* getFirst(db, map, pk, options);
-        switch (first) {
-            case (?(partition, entity)) {
-                let canister = actor(Principal.toText(partition)) : actor { put: (options: CanDB.PutOptions) -> async () };
-                await canister.put(options);
+    public func checkedReplace(db: CanDB.DB, options: CanDB.PutOptions) : async* Bool {
+        let old = CanDB.get(db, options);
+        switch (old) {
+            case (?old) {
+                await* CanDB.put(db, options);
                 true;
             };
             case null {
@@ -82,15 +81,17 @@ module {
     };
 
     /// This function is intended to ensure that a new value with the same SK is not introduced.
-    public func checkedReplaceOrTrap(db: CanDB.DB, map: CanisterMap.CanisterMap, pk: Text, options: CanDB.PutOptions) : async* () {
-        if (not(await* checkedReplace(db, map, pk, options))) {
+    public func checkedReplaceOrTrap(db: CanDB.DB, options: CanDB.PutOptions) : async* () {
+        if (not(await* checkedReplace(db, options))) {
             Debug.trap("no value to replace");
         }
     };
 
+    type PutNoDuplicatesIndex = actor { checkedReplace : (options: CanDB.PutOptions) -> async Bool; };
+
     /// Ensures no duplicate SKs.
-    public func putNoDuplicates(db: CanDB.DB, map: CanisterMap.CanisterMap, pk: Text, options: CanDB.PutOptions) : async* () {
-        if (not(await* checkedReplace(db, map, pk, options))) {
+    public func putNoDuplicates(index: PutNoDuplicatesIndex, map: CanisterMap.CanisterMap, pk: Text, options: CanDB.PutOptions) : async* () {
+        if (not(await index.checkedReplace(options))) {
             let canisters = CanisterMap.get(map, pk);
             let ?canisters2 = canisters else {
                 Debug.trap("no partition canisters");
