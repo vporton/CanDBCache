@@ -47,7 +47,7 @@ module {
         RBT.entries(all).next();
     };
 
-    public type ResultStatus = { #oneResult; #severalResults };
+    public public type ResultStatus = { #oneResult; #severalResults };
 
     public func getOne(map: CanisterMap.CanisterMap, pk: Text, options: CanDB.GetOptions) : async* ?(Principal, E.Entity, ResultStatus) {
         let all = await* getAll(map, pk, options);
@@ -190,7 +190,7 @@ module {
         await partition.putAttribute(options);
     };
 
-    type PutNoDuplicatesIndex = actor { putExisting : (options: CanDB.PutOptions) -> async Bool; };
+    public type PutNoDuplicatesIndex = actor { putExisting : (options: CanDB.PutOptions) -> async Bool; };
 
     /// Ensures no duplicate SKs.
     public func putNoDuplicates(index: PutNoDuplicatesIndex, map: CanisterMap.CanisterMap, pk: Text, options: CanDB.PutOptions) : async* () {
@@ -199,7 +199,7 @@ module {
         };
     };
 
-    type PutAttributeNoDuplicatesIndex = actor {
+    public type PutAttributeNoDuplicatesIndex = actor {
         putExistingAttribute : (options: { sk: E.SK; key: E.AttributeKey; value: E.AttributeValue }) -> async Bool;
     };
 
