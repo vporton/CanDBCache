@@ -80,16 +80,16 @@ module {
     };
 
     /// This function is intended to ensure that a new value with the same SK is not introduced.
-    public func putExisting(db: CanDB.DB, options: CanDB.PutOptions) : async* Bool {
-        (await* replaceExisting(db, options)) != null;
-    };
-
-    /// This function is intended to ensure that a new value with the same SK is not introduced.
     public func replaceExistingOrTrap(db: CanDB.DB, options: CanDB.PutOptions) : async* E.Entity {
         let ?entity = await* replaceExisting(db, options) else {
             Debug.trap("no existing value");
         };
         entity;
+    };
+
+    /// This function is intended to ensure that a new value with the same SK is not introduced.
+    public func putExisting(db: CanDB.DB, options: CanDB.PutOptions) : async* Bool {
+        (await* replaceExisting(db, options)) != null;
     };
 
     /// This function is intended to ensure that a new value with the same SK is not introduced.
