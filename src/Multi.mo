@@ -144,6 +144,13 @@ module {
     };
 
     /// This function is intended to ensure that a new value with the same SK is not introduced.
+    public func putExistingAttribute(db: CanDB.DB, options: { sk: E.SK; key: E.AttributeKey; value: E.AttributeValue })
+        : async* Bool
+    {
+        (await* replaceExistingAttribute(db, options)) != null;
+    };
+
+    /// This function is intended to ensure that a new value with the same SK is not introduced.
     public func putExistingOrTrap(db: CanDB.DB, options: CanDB.PutOptions) : async* () {
         if (not(await* putExisting(db, options))) {
             Debug.trap("no existing value");
