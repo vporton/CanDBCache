@@ -193,7 +193,7 @@ module {
     };
 
     type PutAttributeNoDuplicatesIndex = actor {
-        replaceExistingAttribute : (options: { sk: E.SK; key: E.AttributeKey; value: E.AttributeValue }) -> async Bool;
+        putExistingAttribute : (options: { sk: E.SK; key: E.AttributeKey; value: E.AttributeValue }) -> async Bool;
     };
 
     /// Ensures no duplicate SKs.
@@ -203,7 +203,7 @@ module {
         pk: Text,
         options: { sk: E.SK; key: E.AttributeKey; value: E.AttributeValue }
     ) : async* () {
-        if (not(await index.replaceExistingAttribute(options))) {
+        if (not(await index.putExistingAttribute(options))) {
             await* putAttributeWithPossibleDuplicate(map, pk, options);
         };
     };
