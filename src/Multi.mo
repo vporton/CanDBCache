@@ -84,6 +84,18 @@ module {
         entity;
     };
 
+    public func replaceAttribute(db: CanDB.DB, options: { sk: E.SK; key: E.AttributeKey; value: E.AttributeValue })
+        : async* ?E.Entity
+    {
+        CanDB.update(db, { sk = options.sk; updateAttributeMapFunction = func(old: ?E.AttributeMap): E.AttributeMap {
+            let map = switch (old) {
+                case (?old) { old };
+                case null { RBT.init() };
+            };
+            RBT.put(map, Text.compare, options.key, options.value);
+        }});
+    };
+
     /// This function is intended to ensure that a new value with the same SK is not introduced.
     public func replaceExisting(db: CanDB.DB, options: CanDB.PutOptions) : async* ?E.Entity {
         var map = RBT.init<E.AttributeKey, E.AttributeValue>();
@@ -146,6 +158,13 @@ module {
         let canister = StableBuffer.get(canisters2, Int.abs(StableBuffer.size(canisters2) - 1));
         let partition = actor(canister) : actor { put : (options: CanDB.PutOptions) -> async () };
         await partition.put(options);
+    };
+
+    public func putAttribute(
+        db: CanDB.DB,
+        options: { sk: E.SK; key: E.AttributeKey; value: E.AttributeValue }
+    ) : async* () {
+        ignore await* replaceAttribute(db, options);
     };
 
     public func putAttributeWithPossibleDuplicate(
