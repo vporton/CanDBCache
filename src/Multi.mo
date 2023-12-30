@@ -193,9 +193,19 @@ module {
     public type PutNoDuplicatesIndex = actor { putExisting : (options: CanDB.PutOptions) -> async Bool; };
 
     /// Ensures no duplicate SKs.
-    public func putNoDuplicates(index: PutNoDuplicatesIndex, map: CanisterMap.CanisterMap, pk: Text, options: CanDB.PutOptions) : async* () {
-        if (not(await index.putExisting(options))) {
-            await* putWithPossibleDuplicate(map, pk, options);
+    public func putNoDuplicates(map: CanisterMap.CanisterMap, pk: Text, options: CanDB.PutOptions) : async* () {
+        // Duplicate code
+        let first = await* getFirst(map, pk, options);
+        switch (first) {
+            case (?(canister, entity)) {
+                let partition = actor(Principal.toText(canister)) : actor {
+                    put : (options: { sk: E.SK; attributes: [(E.AttributeKey, E.AttributeValue)] }) -> async ();
+                };
+                await partition.put(options);
+            };
+            case null {
+                await* putWithPossibleDuplicate(map, pk, options);
+            };
         };
     };
 
@@ -204,14 +214,24 @@ module {
     };
 
     /// Ensures no duplicate SKs.
+    // FIXME: Cannot have both `index` and `map` vs partition
     public func putAttributeNoDuplicates(
-        index: PutAttributeNoDuplicatesIndex,
         map: CanisterMap.CanisterMap,
         pk: Text,
         options: { sk: E.SK; key: E.AttributeKey; value: E.AttributeValue }
     ) : async* () {
-        if (not(await index.putExistingAttribute(options))) {
-            await* putAttributeWithPossibleDuplicate(map, pk, options);
+        // Duplicate code
+        let first = await* getFirst(map, pk, options);
+        switch (first) {
+            case (?(canister, entity)) {
+                let partition = actor(Principal.toText(canister)) : actor {
+                    putAttribute : (options: { sk: E.SK; key: E.AttributeKey; value: E.AttributeValue }) -> async ();
+                };
+                await partition.putAttribute(options);
+            };
+            case null {
+                await* putAttributeWithPossibleDuplicate(map, pk, options);
+            };
         };
     };
 }
