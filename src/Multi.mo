@@ -183,7 +183,7 @@ module {
         await partition.putAttribute(options);
     };
 
-    type PutNoDuplicatesIndex = actor { replaceExisting : (options: CanDB.PutOptions) -> async Bool; };
+    type PutNoDuplicatesIndex = actor { putExisting : (options: CanDB.PutOptions) -> async Bool; };
 
     /// Ensures no duplicate SKs.
     public func putNoDuplicates(index: PutNoDuplicatesIndex, map: CanisterMap.CanisterMap, pk: Text, options: CanDB.PutOptions) : async* () {
