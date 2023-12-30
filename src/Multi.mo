@@ -157,7 +157,7 @@ module {
         }
     };
 
-    public func putWithPossibleDuplicate(map: CanisterMap.CanisterMap, pk: Text, options: CanDB.PutOptions) : async* () {
+    public func putWithPossibleDuplicate(map: CanisterMap.CanisterMap, pk: Text, options: CanDB.PutOptions) : async* Principal {
         let canisters = CanisterMap.get(map, pk);
         let ?canisters2 = canisters else {
             Debug.trap("no partition canisters");
@@ -165,6 +165,7 @@ module {
         let canister = StableBuffer.get(canisters2, Int.abs(StableBuffer.size(canisters2) - 1));
         let partition = actor(canister) : actor { put : (options: CanDB.PutOptions) -> async () };
         await partition.put(options);
+        Principal.fromText(canister);
     };
 
     public func putAttribute(
@@ -178,7 +179,7 @@ module {
         map: CanisterMap.CanisterMap,
         pk: Text,
         options: { sk: E.SK; key: E.AttributeKey; value: E.AttributeValue }
-    ) : async* () {
+    ) : async* Principal {
         let canisters = CanisterMap.get(map, pk);
         let ?canisters2 = canisters else {
             Debug.trap("no partition canisters");
@@ -188,12 +189,13 @@ module {
             putAttribute : (options: { sk: E.SK; key: E.AttributeKey; value: E.AttributeValue }) -> async ();
         };
         await partition.putAttribute(options);
+        Principal.fromText(canister);
     };
 
     public type PutNoDuplicatesIndex = actor { putExisting : (options: CanDB.PutOptions) -> async Bool; };
 
     /// Ensures no duplicate SKs.
-    public func putNoDuplicates(map: CanisterMap.CanisterMap, pk: Text, options: CanDB.PutOptions) : async* () {
+    public func putNoDuplicates(map: CanisterMap.CanisterMap, pk: Text, options: CanDB.PutOptions) : async* Principal {
         // Duplicate code
         let first = await* getFirst(map, pk, options);
         switch (first) {
@@ -202,6 +204,7 @@ module {
                     put : (options: { sk: E.SK; attributes: [(E.AttributeKey, E.AttributeValue)] }) -> async ();
                 };
                 await partition.put(options);
+                canister;
             };
             case null {
                 await* putWithPossibleDuplicate(map, pk, options);
@@ -219,7 +222,7 @@ module {
         map: CanisterMap.CanisterMap,
         pk: Text,
         options: { sk: E.SK; key: E.AttributeKey; value: E.AttributeValue }
-    ) : async* () {
+    ) : async* Principal {
         // Duplicate code
         let first = await* getFirst(map, pk, options);
         switch (first) {
@@ -228,6 +231,7 @@ module {
                     putAttribute : (options: { sk: E.SK; key: E.AttributeKey; value: E.AttributeValue }) -> async ();
                 };
                 await partition.putAttribute(options);
+                canister;
             };
             case null {
                 await* putAttributeWithPossibleDuplicate(map, pk, options);
