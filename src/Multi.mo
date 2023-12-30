@@ -100,7 +100,7 @@ module {
     };
 
     /// Unsafe because it may create duplicate keys (in different partitions).
-    public func unsafePut(map: CanisterMap.CanisterMap, pk: Text, options: CanDB.PutOptions) : async* () {
+    public func putWithPossibleDuplicate(map: CanisterMap.CanisterMap, pk: Text, options: CanDB.PutOptions) : async* () {
         let canisters = CanisterMap.get(map, pk);
         let ?canisters2 = canisters else {
             Debug.trap("no partition canisters");
