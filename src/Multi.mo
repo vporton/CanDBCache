@@ -41,10 +41,23 @@ module {
         result;
     };
 
-    // Can be made faster at expense of code size.
     public func getFirst(map: CanisterMap.CanisterMap, pk: Text, options: CanDB.GetOptions) : async* ?(Principal, E.Entity) {
         let all = await* getAll(map, pk, options);
         RBT.entries(all).next();
+    };
+
+    public func getFirstAttribute(
+        map: CanisterMap.CanisterMap,
+        pk: Text,
+        options: { sk: E.SK; key: E.AttributeKey }
+    ) : async* ?(Principal, ?E.AttributeValue) {
+        let first = await* getFirst(map, pk, options);
+        switch (first) {
+            case (?(part, value)) {
+                ?(part, RBT.get(value.attributes, Text.compare, options.key));
+            };
+            case null { null };
+        };
     };
 
     public type ResultStatus = { #oneResult; #severalResults };
@@ -62,6 +75,8 @@ module {
             };
         };
     };
+
+    // TODO: `getOneAttribute`
 
     // TODO: `has` counterparts of `get` methods
 
