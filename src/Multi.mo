@@ -5,6 +5,7 @@ import Array "mo:base/Array";
 import Buffer "mo:base/Buffer";
 import Debug "mo:base/Debug";
 import Int "mo:base/Int";
+import Text "mo:base/Text";
 import CanDB "mo:candb/CanDB";
 import CanisterMap "mo:candb/CanisterMap";
 import RBT "mo:stable-rbtree/StableRBTree";
@@ -67,21 +68,59 @@ module {
     // TODO: below race conditions
 
     /// This function is intended to ensure that a new value with the same SK is not introduced.
-    public func replaceExisting(db: CanDB.DB, options: CanDB.PutOptions) : async* ?E.Entity {
-        let old = CanDB.get(db, options);
-        switch (old) {
-            case (?old) {
-                await* CanDB.replace(db, options);
-            };
-            case null {
-                null;
-            };
+    public func updateExisting(db: CanDB.DB, options: CanDB.UpdateOptions) : async* ?E.Entity {
+        if (CanDB.skExists(db, options.sk)) {
+            CanDB.update(db, options);
+        } else {
+            null;
         };
+    };
+
+    /// This function is intended to ensure that a new value with the same SK is not introduced.
+    public func updateExistingOrTrap(db: CanDB.DB, options: CanDB.UpdateOptions) : async* E.Entity {
+        let ?entity = await* updateExisting(db, options) else {
+            Debug.trap("no existing value");
+        };
+        entity;
+    };
+
+    /// This function is intended to ensure that a new value with the same SK is not introduced.
+    public func replaceExisting(db: CanDB.DB, options: CanDB.PutOptions) : async* ?E.Entity {
+        var map = RBT.init<E.AttributeKey, E.AttributeValue>();
+        for (e in options.attributes.vals()) {
+            map := RBT.put(map, Text.compare, e.0, e.1);
+        };
+        await* updateExisting(db, { sk = options.sk; updateAttributeMapFunction = func(old: ?E.AttributeMap): E.AttributeMap {
+            map;
+        }})
+    };
+
+    /// This function is intended to ensure that a new value with the same SK is not introduced.
+    public func replaceExistingAttribute(db: CanDB.DB, options: { sk: E.SK; key: E.AttributeKey; value: E.AttributeValue })
+        : async* ?E.Entity
+    {
+        await* updateExisting(db, { sk = options.sk; updateAttributeMapFunction = func(old: ?E.AttributeMap): E.AttributeMap {
+            let map = switch (old) {
+                case (?old) { old };
+                case null { RBT.init() };
+            };
+            RBT.put(map, Text.compare, options.key, options.value);
+        }});
     };
 
     /// This function is intended to ensure that a new value with the same SK is not introduced.
     public func replaceExistingOrTrap(db: CanDB.DB, options: CanDB.PutOptions) : async* E.Entity {
         let ?entity = await* replaceExisting(db, options) else {
+            Debug.trap("no existing value");
+        };
+        entity;
+    };
+
+    /// This function is intended to ensure that a new value with the same SK is not introduced.
+    public func replaceExistingAttributeOrTrap(db: CanDB.DB, options: { sk: E.SK; key: E.AttributeKey; value: E.AttributeValue })
+        : async* E.Entity
+    {
+        let ?entity = await* replaceExistingAttribute(db, options) else {
             Debug.trap("no existing value");
         };
         entity;
@@ -99,7 +138,6 @@ module {
         }
     };
 
-    /// Unsafe because it may create duplicate keys (in different partitions).
     public func putWithPossibleDuplicate(map: CanisterMap.CanisterMap, pk: Text, options: CanDB.PutOptions) : async* () {
         let canisters = CanisterMap.get(map, pk);
         let ?canisters2 = canisters else {
