@@ -1,6 +1,6 @@
 [package]
 name = "CanDBMulti"
-version = "0.9.3"
+version = "0.9.4"
 description = "Access to multiple canisters of CanDB database"
 repository = "https://github.com/vporton/CanDBCache"
 keywords = [ "database", "databases", "query" ]
