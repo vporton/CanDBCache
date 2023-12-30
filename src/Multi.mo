@@ -115,7 +115,7 @@ module {
     /// Ensures no duplicate SKs.
     public func putNoDuplicates(index: PutNoDuplicatesIndex, map: CanisterMap.CanisterMap, pk: Text, options: CanDB.PutOptions) : async* () {
         if (not(await index.replaceExisting(options))) {
-            await* unsafePut(map, pk, options);
+            await* putWithPossibleDuplicate(map, pk, options);
         };
     };
 }
