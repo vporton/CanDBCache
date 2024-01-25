@@ -76,6 +76,45 @@ module {
         };
     };
 
+    public func getByHint(map: CanisterMap.CanisterMap, pk: Text, hint: ?Principal, options: CanDB.GetOptions)
+        : async* ?(Principal, E.Entity)
+    {
+        switch (hint) {
+            case (?hint) {
+                let part: actor {
+                    get(options: CanDB.GetOptions): async ?E.Entity;
+                } = actor(Principal.toText(hint));
+                let res = await part.get(options);
+                do ? { (hint, res!) };
+            };
+            case null {
+                await* getFirst(map, pk, options);
+            };
+        }
+    };
+
+    public func getAttributeByHint(
+        map: CanisterMap.CanisterMap,
+        pk: Text,
+        hint: ?Principal,
+        options: { sk: E.SK; key: E.AttributeKey }
+    )
+        : async* ?(Principal, ?E.AttributeValue)
+    {
+        switch (hint) {
+            case (?hint) {
+                let part: actor {
+                    getAttribute(options: { sk: E.SK; key: E.AttributeKey }): async ?E.AttributeValue;
+                } = actor(Principal.toText(hint));
+                let res = await part.getAttribute(options);
+                ?(hint, res);
+            };
+            case null {
+                await* getFirstAttribute(map, pk, options);
+            };
+        }
+    };
+
     // TODO: `getOneAttribute`
 
     // TODO: `has` counterparts of `get` methods
