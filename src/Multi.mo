@@ -49,12 +49,12 @@ module {
     public func getFirstAttribute(
         map: CanisterMap.CanisterMap,
         pk: Text,
-        options: { sk: E.SK; key: E.AttributeKey }
+        options: { sk: E.SK; subkey: E.AttributeKey }
     ) : async* ?(Principal, ?E.AttributeValue) {
         let first = await* getFirst(map, pk, options);
         switch (first) {
             case (?(part, value)) {
-                ?(part, RBT.get(value.attributes, Text.compare, options.key));
+                ?(part, RBT.get(value.attributes, Text.compare, options.subkey));
             };
             case null { null };
         };
@@ -97,14 +97,14 @@ module {
         map: CanisterMap.CanisterMap,
         pk: Text,
         hint: ?Principal,
-        options: { sk: E.SK; key: E.AttributeKey }
+        options: { sk: E.SK; subkey: E.AttributeKey }
     )
         : async* ?(Principal, ?E.AttributeValue)
     {
         switch (hint) {
             case (?hint) {
                 let part: actor {
-                    getAttribute(options: { sk: E.SK; key: E.AttributeKey }): async ?E.AttributeValue;
+                    getAttribute(options: { sk: E.SK; subkey: E.AttributeKey }): async ?E.AttributeValue;
                 } = actor(Principal.toText(hint));
                 let res = await part.getAttribute(options);
                 ?(hint, res);
@@ -138,7 +138,7 @@ module {
         entity;
     };
 
-    public func replaceAttribute(db: CanDB.DB, options: { sk: E.SK; key: E.AttributeKey; value: E.AttributeValue })
+    public func replaceAttribute(db: CanDB.DB, options: { sk: E.SK; subkey: E.AttributeKey; value: E.AttributeValue })
         : async* ?E.Entity
     {
         CanDB.update(db, { sk = options.sk; updateAttributeMapFunction = func(old: ?E.AttributeMap): E.AttributeMap {
@@ -146,7 +146,7 @@ module {
                 case (?old) { old };
                 case null { RBT.init() };
             };
-            RBT.put(map, Text.compare, options.key, options.value);
+            RBT.put(map, Text.compare, options.subkey, options.value);
         }});
     };
 
@@ -162,7 +162,7 @@ module {
     };
 
     /// This function is intended to ensure that a new value with the same SK is not introduced.
-    public func replaceExistingAttribute(db: CanDB.DB, options: { sk: E.SK; key: E.AttributeKey; value: E.AttributeValue })
+    public func replaceExistingAttribute(db: CanDB.DB, options: { sk: E.SK; subkey: E.AttributeKey; value: E.AttributeValue })
         : async* ?E.Entity
     {
         await* updateExisting(db, { sk = options.sk; updateAttributeMapFunction = func(old: ?E.AttributeMap): E.AttributeMap {
@@ -170,7 +170,7 @@ module {
                 case (?old) { old };
                 case null { RBT.init() };
             };
-            RBT.put(map, Text.compare, options.key, options.value);
+            RBT.put(map, Text.compare, options.subkey, options.value);
         }});
     };
 
@@ -183,7 +183,7 @@ module {
     };
 
     /// This function is intended to ensure that a new value with the same SK is not introduced.
-    public func replaceExistingAttributeOrTrap(db: CanDB.DB, options: { sk: E.SK; key: E.AttributeKey; value: E.AttributeValue })
+    public func replaceExistingAttributeOrTrap(db: CanDB.DB, options: { sk: E.SK; subkey: E.AttributeKey; value: E.AttributeValue })
         : async* E.Entity
     {
         let ?entity = await* replaceExistingAttribute(db, options) else {
@@ -198,7 +198,7 @@ module {
     };
 
     /// This function is intended to ensure that a new value with the same SK is not introduced.
-    public func putExistingAttribute(db: CanDB.DB, options: { sk: E.SK; key: E.AttributeKey; value: E.AttributeValue })
+    public func putExistingAttribute(db: CanDB.DB, options: { sk: E.SK; subkey: E.AttributeKey; value: E.AttributeValue })
         : async* Bool
     {
         (await* replaceExistingAttribute(db, options)) != null;
@@ -224,7 +224,7 @@ module {
 
     public func putAttribute(
         db: CanDB.DB,
-        options: { sk: E.SK; key: E.AttributeKey; value: E.AttributeValue }
+        options: { sk: E.SK; subkey: E.AttributeKey; value: E.AttributeValue }
     ) : async* () {
         ignore await* replaceAttribute(db, options);
     };
@@ -232,7 +232,7 @@ module {
     public func putAttributeWithPossibleDuplicate(
         map: CanisterMap.CanisterMap,
         pk: Text,
-        options: { sk: E.SK; key: E.AttributeKey; value: E.AttributeValue }
+        options: { sk: E.SK; subkey: E.AttributeKey; value: E.AttributeValue }
     ) : async* Principal {
         let canisters = CanisterMap.get(map, pk);
         let ?canisters2 = canisters else {
@@ -240,7 +240,7 @@ module {
         };
         let canister = StableBuffer.get(canisters2, Int.abs(StableBuffer.size(canisters2) - 1));
         let partition = actor(canister) : actor {
-            putAttribute : (options: { sk: E.SK; key: E.AttributeKey; value: E.AttributeValue }) -> async ();
+            putAttribute : (options: { sk: E.SK; subkey: E.AttributeKey; value: E.AttributeValue }) -> async ();
         };
         await partition.putAttribute(options);
         Principal.fromText(canister);
@@ -267,21 +267,21 @@ module {
     };
 
     public type PutAttributeNoDuplicatesIndex = actor {
-        putExistingAttribute : (options: { sk: E.SK; key: E.AttributeKey; value: E.AttributeValue }) -> async Bool;
+        putExistingAttribute : (options: { sk: E.SK; subkey: E.AttributeKey; value: E.AttributeValue }) -> async Bool;
     };
 
     /// Ensures no duplicate SKs.
     public func putAttributeNoDuplicates(
         map: CanisterMap.CanisterMap,
         pk: Text,
-        options: { sk: E.SK; key: E.AttributeKey; value: E.AttributeValue }
+        options: { sk: E.SK; subkey: E.AttributeKey; value: E.AttributeValue }
     ) : async* Principal {
         // Duplicate code
         let first = await* getFirst(map, pk, options);
         switch (first) {
             case (?(canister, entity)) {
                 let partition = actor(Principal.toText(canister)) : actor {
-                    putAttribute : (options: { sk: E.SK; key: E.AttributeKey; value: E.AttributeValue }) -> async ();
+                    putAttribute : (options: { sk: E.SK; subkey: E.AttributeKey; value: E.AttributeValue }) -> async ();
                 };
                 await partition.putAttribute(options);
                 canister;
