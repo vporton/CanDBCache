@@ -1,8 +1,8 @@
 [package]
 name = "candb-multi"
-version = "0.10.4"
+version = "0.10.5"
 description = "Access to multiple canisters of CanDB database"
-repository = "https://github.com/vporton/CanDBCache"
+repository = "https://github.com/vporton/CanDBMulti"
 keywords = [ "database", "databases", "query" ]
 license = "MIT"
 
