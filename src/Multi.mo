@@ -271,7 +271,6 @@ module {
     };
 
     /// Ensures no duplicate SKs.
-    // FIXME: Cannot have both `index` and `map` vs partition
     public func putAttributeNoDuplicates(
         map: CanisterMap.CanisterMap,
         pk: Text,
