@@ -1,6 +1,6 @@
 [package]
 name = "candb-multi"
-version = "0.10.3"
+version = "0.10.4"
 description = "Access to multiple canisters of CanDB database"
 repository = "https://github.com/vporton/CanDBCache"
 keywords = [ "database", "databases", "query" ]
@@ -10,4 +10,4 @@ license = "MIT"
 candb = "1.0.7"
 stable-rbtree = "1.0.0"
 stablebuffer = "https://github.com/skilesare/StableBuffer#v0.2.0@110660769d11ba93c618dc4712525d20503bdc37"
-btree = "https://github.com/canscale/StableHeapBTreeMap#v0.3.3"
+btree = "https://github.com/canscale/StableHeapBTreeMap#v0.3.3@bb5daa2c8c4781fc0e5ff92ae420e7ad11b93e02"
