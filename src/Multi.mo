@@ -247,9 +247,11 @@ module {
     public type PutNoDuplicatesIndex = actor { putExisting : (options: CanDB.PutOptions) -> async Bool; };
 
     /// Ensures no duplicate SKs.
-    public func putNoDuplicates(map: CanisterMap.CanisterMap, pk: Text, options: CanDB.PutOptions) : async* Principal {
+    public func putNoDuplicates(map: CanisterMap.CanisterMap, pk: Text, hint: ?Principal, options: CanDB.PutOptions)
+        : async* Principal
+    {
         // Duplicate code
-        let first = await* getFirst(map, pk, options);
+        let first = await* getByHint(map, pk, hint, options);
         switch (first) {
             case (?(canister, entity)) {
                 let partition = actor(Principal.toText(canister)) : actor {
@@ -272,10 +274,11 @@ module {
     public func putAttributeNoDuplicates(
         map: CanisterMap.CanisterMap,
         pk: Text,
+        hint: ?Principal,
         options: { sk: E.SK; subkey: E.AttributeKey; value: E.AttributeValue }
     ) : async* Principal {
         // Duplicate code
-        let first = await* getFirst(map, pk, options);
+        let first = await* getByHint(map, pk, hint, options);
         switch (first) {
             case (?(canister, entity)) {
                 let partition = actor(Principal.toText(canister)) : actor {
