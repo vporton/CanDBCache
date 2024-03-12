@@ -1,8 +1,6 @@
 import Principal "mo:base/Principal";
 import E "mo:candb/Entity";
-import Iter "mo:base/Iter";
 import Array "mo:base/Array";
-import Buffer "mo:base/Buffer";
 import Debug "mo:base/Debug";
 import Int "mo:base/Int";
 import Text "mo:base/Text";
