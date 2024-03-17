@@ -1,3 +1,7 @@
+/// This is my extension to CanDB.
+///
+/// Retrieving by key from multiple canisters.
+
 import Principal "mo:base/Principal";
 import E "mo:candb/Entity";
 import Array "mo:base/Array";
@@ -10,6 +14,7 @@ import RBT "mo:stable-rbtree/StableRBTree";
 import StableBuffer "mo:stablebuffer/StableBuffer";
 
 module {
+    /// Get values from a DB with a given key for all canisters in @pk.
     public func getAll(map: CanisterMap.CanisterMap, pk: Text, options: CanDB.GetOptions) : async* RBT.Tree<Principal, E.Entity> {
         var result = RBT.init<Principal, E.Entity>();
         let canisters = CanisterMap.get(map, pk);
@@ -39,11 +44,13 @@ module {
         result;
     };
 
+    /// Get the first value from a DB with a given key for all canisters in @pk.
     public func getFirst(map: CanisterMap.CanisterMap, pk: Text, options: CanDB.GetOptions) : async* ?(Principal, E.Entity) {
         let all = await* getAll(map, pk, options);
         RBT.entries(all).next();
     };
 
+    /// Get the first attribute value from a DB with a given key for all canisters in @pk.
     public func getFirstAttribute(
         map: CanisterMap.CanisterMap,
         pk: Text,
@@ -58,8 +65,11 @@ module {
         };
     };
 
+    /// Found just one result or several results?
     public type ResultStatus = { #oneResult; #severalResults };
 
+    /// Get the first attribute value from a DB with a given key for all canisters in @pk and
+    /// return whether there were the same key in other canisters.
     public func getOne(map: CanisterMap.CanisterMap, pk: Text, options: CanDB.GetOptions) : async* ?(Principal, E.Entity, ResultStatus) {
         let all = await* getAll(map, pk, options);
         var iter = RBT.entries(all);
@@ -74,6 +84,8 @@ module {
         };
     };
 
+    /// Get the value from a canister specified by the @hint. (@hint is used to speedup lookup.)
+    /// If there are no @hint, return the value from the first canister.
     public func getByHint(map: CanisterMap.CanisterMap, pk: Text, hint: ?Principal, options: CanDB.GetOptions)
         : async* ?(Principal, E.Entity)
     {
@@ -91,6 +103,8 @@ module {
         }
     };
 
+    /// Get the attribute from a canister specified by the @hint. (@hint is used to speedup lookup.)
+    /// If there are no @hint, return the value from the first canister.
     public func getAttributeByHint(
         map: CanisterMap.CanisterMap,
         pk: Text,
@@ -119,6 +133,8 @@ module {
 
     // TODO: below race conditions
 
+    /// Updates a value in the DB, only if the value specified by the key already exists.
+    ///
     /// This function is intended to ensure that a new value with the same SK is not introduced.
     public func updateExisting(db: CanDB.DB, options: CanDB.UpdateOptions) : async* ?E.Entity {
         if (CanDB.skExists(db, options.sk)) {
@@ -128,6 +144,8 @@ module {
         };
     };
 
+    /// Updates an attribute in the DB, only if the value specified by the key already exists.
+    ///
     /// This function is intended to ensure that a new value with the same SK is not introduced.
     public func updateExistingOrTrap(db: CanDB.DB, options: CanDB.UpdateOptions) : async* E.Entity {
         let ?entity = await* updateExisting(db, options) else {
@@ -136,6 +154,7 @@ module {
         entity;
     };
 
+    /// Replaces (or creates) an attribute in the DB.
     public func replaceAttribute(db: CanDB.DB, options: { sk: E.SK; subkey: E.AttributeKey; value: E.AttributeValue })
         : async* ?E.Entity
     {
@@ -148,6 +167,8 @@ module {
         }});
     };
 
+    /// Replaces (or creates) an existing value in the DB.
+    ///
     /// This function is intended to ensure that a new value with the same SK is not introduced.
     public func replaceExisting(db: CanDB.DB, options: CanDB.PutOptions) : async* ?E.Entity {
         var map = RBT.init<E.AttributeKey, E.AttributeValue>();
@@ -159,6 +180,8 @@ module {
         }})
     };
 
+    /// Replaces an existing attribute in the DB.
+    ///
     /// This function is intended to ensure that a new value with the same SK is not introduced.
     public func replaceExistingAttribute(db: CanDB.DB, options: { sk: E.SK; subkey: E.AttributeKey; value: E.AttributeValue })
         : async* ?E.Entity
@@ -172,6 +195,9 @@ module {
         }});
     };
 
+    /// Replaces an existing attribute in the DB.
+    /// If there is none, traps.
+    ///
     /// This function is intended to ensure that a new value with the same SK is not introduced.
     public func replaceExistingOrTrap(db: CanDB.DB, options: CanDB.PutOptions) : async* E.Entity {
         let ?entity = await* replaceExisting(db, options) else {
@@ -180,6 +206,9 @@ module {
         entity;
     };
 
+    /// Replaces an existing attribute in the DB.
+    /// If there is none, traps.
+    ///
     /// This function is intended to ensure that a new value with the same SK is not introduced.
     public func replaceExistingAttributeOrTrap(db: CanDB.DB, options: { sk: E.SK; subkey: E.AttributeKey; value: E.AttributeValue })
         : async* E.Entity
@@ -190,11 +219,15 @@ module {
         entity;
     };
 
+    /// Replaces an existing value in the DB.
+    ///
     /// This function is intended to ensure that a new value with the same SK is not introduced.
     public func putExisting(db: CanDB.DB, options: CanDB.PutOptions) : async* Bool {
         (await* replaceExisting(db, options)) != null;
     };
 
+    /// Replaces an existing attribute in the DB.
+    ///
     /// This function is intended to ensure that a new value with the same SK is not introduced.
     public func putExistingAttribute(db: CanDB.DB, options: { sk: E.SK; subkey: E.AttributeKey; value: E.AttributeValue })
         : async* Bool
@@ -202,6 +235,9 @@ module {
         (await* replaceExistingAttribute(db, options)) != null;
     };
 
+    /// Replaces an existing value in the DB.
+    /// If there are none, traps.
+    ///
     /// This function is intended to ensure that a new value with the same SK is not introduced.
     public func putExistingOrTrap(db: CanDB.DB, options: CanDB.PutOptions) : async* () {
         if (not(await* putExisting(db, options))) {
@@ -209,6 +245,9 @@ module {
         }
     };
 
+    /// Replaces an value in the DB or adds new value.
+    ///
+    /// This function may create duplicate values.
     public func putWithPossibleDuplicate(map: CanisterMap.CanisterMap, pk: Text, options: CanDB.PutOptions) : async* Principal {
         let canisters = CanisterMap.get(map, pk);
         let ?canisters2 = canisters else {
@@ -220,6 +259,9 @@ module {
         Principal.fromText(canister);
     };
 
+    /// Replaces an attribute in the DB or adds a new attribute.
+    ///
+    /// This function may create duplicate values.
     public func putAttribute(
         db: CanDB.DB,
         options: { sk: E.SK; subkey: E.AttributeKey; value: E.AttributeValue }
@@ -227,6 +269,10 @@ module {
         ignore await* replaceAttribute(db, options);
     };
 
+    /// Replaces an attribute in the DB or adds a new attribute.
+    /// Return the canister to which it was added.
+    ///
+    /// This function may create duplicate values.
     public func putAttributeWithPossibleDuplicate(
         map: CanisterMap.CanisterMap,
         pk: Text,
@@ -246,7 +292,9 @@ module {
 
     public type PutNoDuplicatesIndex = actor { putExisting : (options: CanDB.PutOptions) -> async Bool; };
 
-    /// Ensures no duplicate SKs.
+    /// Replaces an existing value in the DB or creates a new one.
+    ///
+    /// This function is intended to ensure that a new value with the same SK is not introduced.
     public func putNoDuplicates(map: CanisterMap.CanisterMap, pk: Text, hint: ?Principal, options: CanDB.PutOptions)
         : async* Principal
     {
@@ -270,7 +318,9 @@ module {
         putExistingAttribute : (options: { sk: E.SK; subkey: E.AttributeKey; value: E.AttributeValue }) -> async Bool;
     };
 
-    /// Ensures no duplicate SKs.
+    /// Replaces an existing attribute in the DB or creates a new one.
+    ///
+    /// This function is intended to ensure that a new value with the same SK is not introduced.
     public func putAttributeNoDuplicates(
         map: CanisterMap.CanisterMap,
         pk: Text,
