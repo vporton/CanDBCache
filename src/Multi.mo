@@ -2,8 +2,8 @@
 ///
 /// It supports:
 ///
-/// * retrieving by key from multiple canisters and storing
-/// * ensuring that there are no duplicate keys in a partition.
+/// * retrieving by key from multiple canisters
+/// * storing ensuring that there are no duplicate keys in a partition.
 ///
 /// This is useful for such tasks, as anti-Sybil protection, to ensure that there are no objects with a duplicate key.
 
