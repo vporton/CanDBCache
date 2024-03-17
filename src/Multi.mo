@@ -19,7 +19,7 @@ import RBT "mo:stable-rbtree/StableRBTree";
 import StableBuffer "mo:stablebuffer/StableBuffer";
 
 module {
-    /// Get values from a DB with a given key for all canisters in @pk.
+    /// Get values from a DB with a given key for all canisters in `pk`.
     public func getAll(map: CanisterMap.CanisterMap, pk: Text, options: CanDB.GetOptions) : async* RBT.Tree<Principal, E.Entity> {
         var result = RBT.init<Principal, E.Entity>();
         let canisters = CanisterMap.get(map, pk);
@@ -49,13 +49,13 @@ module {
         result;
     };
 
-    /// Get the first value from a DB with a given key for all canisters in @pk.
+    /// Get the first value from a DB with a given key for all canisters in `pk`.
     public func getFirst(map: CanisterMap.CanisterMap, pk: Text, options: CanDB.GetOptions) : async* ?(Principal, E.Entity) {
         let all = await* getAll(map, pk, options);
         RBT.entries(all).next();
     };
 
-    /// Get the first attribute value from a DB with a given key for all canisters in @pk.
+    /// Get the first attribute value from a DB with a given key for all canisters in `pk`.
     public func getFirstAttribute(
         map: CanisterMap.CanisterMap,
         pk: Text,
@@ -73,7 +73,7 @@ module {
     /// Found just one result or several results?
     public type ResultStatus = { #oneResult; #severalResults };
 
-    /// Get the first attribute value from a DB with a given key for all canisters in @pk and
+    /// Get the first attribute value from a DB with a given key for all canisters in `pk` and
     /// return whether there were the same key in other canisters.
     public func getOne(map: CanisterMap.CanisterMap, pk: Text, options: CanDB.GetOptions) : async* ?(Principal, E.Entity, ResultStatus) {
         let all = await* getAll(map, pk, options);
@@ -89,8 +89,8 @@ module {
         };
     };
 
-    /// Get the value from a canister specified by the @hint. (@hint is used to speedup lookup.)
-    /// If there are no @hint, return the value from the first canister.
+    /// Get the value from a canister specified by the `hint`. (`hint` is used to speedup lookup.)
+    /// If there are no `hint`, return the value from the first canister.
     public func getByHint(map: CanisterMap.CanisterMap, pk: Text, hint: ?Principal, options: CanDB.GetOptions)
         : async* ?(Principal, E.Entity)
     {
@@ -108,8 +108,8 @@ module {
         }
     };
 
-    /// Get the attribute from a canister specified by the @hint. (@hint is used to speedup lookup.)
-    /// If there are no @hint, return the value from the first canister.
+    /// Get the attribute from a canister specified by the `hint`. (`hint` is used to speedup lookup.)
+    /// If there are no `hint`, return the value from the first canister.
     public func getAttributeByHint(
         map: CanisterMap.CanisterMap,
         pk: Text,
