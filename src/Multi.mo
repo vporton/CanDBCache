@@ -1,6 +1,7 @@
 /// This is my extension to CanDB.
 ///
-/// Retrieving by key from multiple canisters.
+/// Retrieving by key from multiple canisters and storing, ensuring that there are no duplicate keys in a partition.
+/// This is useful for such tasks, as anti-Sybil protection, to ensure that there are no objects with a duplicate key.
 
 import Principal "mo:base/Principal";
 import E "mo:candb/Entity";
